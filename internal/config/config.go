@@ -23,15 +23,10 @@ type ProfileConfig struct {
 	Paths []string `mapstructure:"paths"`
 }
 
-// GetRepos resolves a profile name or direct repo URI to a list of repos.
+// GetRepos resolves a profile name to a list of repos.
 func (c *Config) GetRepos(arg string) ([]string, error) {
 	if arg == "" {
-		return nil, fmt.Errorf("profile name or --repo is required")
-	}
-
-	// If it contains ":", treat as a direct repo URI
-	if strings.Contains(arg, ":") {
-		return []string{arg}, nil
+		return nil, fmt.Errorf("profile name is required")
 	}
 
 	profile, ok := c.Profiles[arg]

@@ -11,6 +11,12 @@ var resticCmd = &cobra.Command{
 	Use:                "restic -- [restic args...]",
 	Short:              "Run restic directly with kup environment",
 	DisableFlagParsing: true,
+	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if len(args) > 0 && args[len(args)-1] == "--repo" {
+			return repoCompletionFunc(cmd, args, toComplete)
+		}
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Handle --help/-h explicitly since DisableFlagParsing prevents cobra from intercepting it
 		for _, arg := range args {

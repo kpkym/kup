@@ -34,5 +34,6 @@ func init() {
 	restoreCmd.Flags().String("target", "", "restore target directory (required)")
 	restoreCmd.MarkFlagRequired("repo")
 	restoreCmd.MarkFlagRequired("target")
+	restoreCmd.RegisterFlagCompletionFunc("repo", repoCompletionFunc)
 	rootCmd.AddCommand(restoreCmd)
 }

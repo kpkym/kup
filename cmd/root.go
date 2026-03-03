@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 
 	"github.com/kpkym/kup/internal/config"
 	"github.com/spf13/cobra"
@@ -43,6 +44,21 @@ func Execute() {
 func init() {
 	rootCmd.PersistentFlags().String("config", "", "config file (default: $KUP_CONFIG_DIR/config.toml)")
 	rootCmd.PersistentFlags().Bool("dry-run", false, "pass --dry-run to restic")
+}
+
+func repoCompletionFunc(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if len(cfg.Profiles) == 0 {
+		cfgFile, _ := cmd.Root().PersistentFlags().GetString("config")
+		if err := loadConfig(cfgFile); err != nil {
+			return nil, cobra.ShellCompDirectiveError
+		}
+	}
+	var allRepos []string
+	for _, profile := range cfg.Profiles {
+		allRepos = append(allRepos, profile.Repos...)
+	}
+	sort.Strings(allRepos)
+	return allRepos, cobra.ShellCompDirectiveNoFileComp
 }
 
 func profileCompletionFunc(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
