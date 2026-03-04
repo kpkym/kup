@@ -9,6 +9,9 @@ var rcloneCmd = &cobra.Command{
 	Use:                "rclone -- [rclone args...]",
 	Short:              "Run rclone directly with kup environment",
 	DisableFlagParsing: true,
+	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return passthroughCompletion("rclone", append(args, toComplete))
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Handle --help/-h explicitly since DisableFlagParsing prevents cobra from intercepting it
 		for _, arg := range args {

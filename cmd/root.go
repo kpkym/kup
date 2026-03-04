@@ -3,8 +3,11 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
+	"strconv"
+	"strings"
 
 	"github.com/kpkym/kup/internal/config"
 	"github.com/spf13/cobra"
@@ -44,6 +47,27 @@ func Execute() {
 func init() {
 	rootCmd.PersistentFlags().String("config", "", "config file (default: $KUP_CONFIG_DIR/config.toml)")
 	rootCmd.PersistentFlags().Bool("dry-run", false, "pass --dry-run to restic")
+}
+
+func passthroughCompletion(binary string, args []string) ([]string, cobra.ShellCompDirective) {
+	out, err := exec.Command(binary, append([]string{"__complete"}, args...)...).Output()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	var completions []string
+	directive := cobra.ShellCompDirectiveNoFileComp
+	for line := range strings.SplitSeq(strings.TrimRight(string(out), "\n"), "\n") {
+		if strings.HasPrefix(line, ":") {
+			if d, err := strconv.Atoi(line[1:]); err == nil {
+				directive = cobra.ShellCompDirective(d)
+			}
+			break
+		}
+		if line != "" {
+			completions = append(completions, line)
+		}
+	}
+	return completions, directive
 }
 
 func repoCompletionFunc(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {

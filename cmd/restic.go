@@ -15,7 +15,17 @@ var resticCmd = &cobra.Command{
 		if len(args) > 0 && args[len(args)-1] == "--repo" {
 			return repoCompletionFunc(cmd, args, toComplete)
 		}
-		return nil, cobra.ShellCompDirectiveNoFileComp
+
+		// Strip --repo <val> before delegating to restic
+		var resticArgs []string
+		for i := 0; i < len(args); i++ {
+			if args[i] == "--repo" {
+				i++
+				continue
+			}
+			resticArgs = append(resticArgs, args[i])
+		}
+		return passthroughCompletion("restic", append(resticArgs, toComplete))
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Handle --help/-h explicitly since DisableFlagParsing prevents cobra from intercepting it
