@@ -6,12 +6,12 @@ import (
 )
 
 var snapshotsCmd = &cobra.Command{
-	Use:               "snapshots <profile>",
+	Use:               "snapshots <profile>...",
 	Short:             "List snapshots",
-	Args:              cobra.ExactArgs(1),
+	Args:              cobra.MinimumNArgs(1),
 	ValidArgsFunction: profileCompletionFunc,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		repos, err := cfg.GetRepos(args[0])
+		repos, err := resolveRepos(args)
 		if err != nil {
 			return err
 		}

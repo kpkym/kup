@@ -11,12 +11,12 @@ import (
 )
 
 var forgetCmd = &cobra.Command{
-	Use:               "forget <profile>",
+	Use:               "forget <profile>...",
 	Short:             "Remove snapshots according to a policy",
-	Args:              cobra.ExactArgs(1),
+	Args:              cobra.MinimumNArgs(1),
 	ValidArgsFunction: profileCompletionFunc,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		repos, err := cfg.GetRepos(args[0])
+		repos, err := resolveRepos(args)
 		if err != nil {
 			return err
 		}

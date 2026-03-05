@@ -86,9 +86,6 @@ func repoCompletionFunc(cmd *cobra.Command, args []string, toComplete string) ([
 }
 
 func profileCompletionFunc(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	if len(args) > 0 {
-		return nil, cobra.ShellCompDirectiveNoFileComp
-	}
 	if len(cfg.Profiles) == 0 {
 		cfgFile, _ := cmd.Root().PersistentFlags().GetString("config")
 		if err := loadConfig(cfgFile); err != nil {
@@ -100,6 +97,18 @@ func profileCompletionFunc(cmd *cobra.Command, args []string, toComplete string)
 		names = append(names, name)
 	}
 	return names, cobra.ShellCompDirectiveNoFileComp
+}
+
+func resolveRepos(args []string) ([]string, error) {
+	var repos []string
+	for _, arg := range args {
+		r, err := cfg.GetRepos(arg)
+		if err != nil {
+			return nil, err
+		}
+		repos = append(repos, r...)
+	}
+	return repos, nil
 }
 
 func loadConfig(cfgFile string) error {

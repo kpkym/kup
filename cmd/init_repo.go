@@ -6,12 +6,12 @@ import (
 )
 
 var initCmd = &cobra.Command{
-	Use:               "init <profile>",
+	Use:               "init <profile>...",
 	Short:             "Initialize a new restic repository",
-	Args:              cobra.ExactArgs(1),
+	Args:              cobra.MinimumNArgs(1),
 	ValidArgsFunction: profileCompletionFunc,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		repos, err := cfg.GetRepos(args[0])
+		repos, err := resolveRepos(args)
 		if err != nil {
 			return err
 		}

@@ -9,20 +9,23 @@ import (
 )
 
 var backupCmd = &cobra.Command{
-	Use:               "backup <profile>",
+	Use:               "backup <profile>...",
 	Short:             "Run restic backup for a profile",
-	Args:              cobra.ExactArgs(1),
+	Args:              cobra.MinimumNArgs(1),
 	ValidArgsFunction: profileCompletionFunc,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		profileName := args[0]
-
-		profile, err := cfg.GetProfile(profileName)
-		if err != nil {
-			return err
-		}
-
-		if len(profile.Paths) == 0 {
-			return fmt.Errorf("profile %q has no paths configured", profileName)
+		var allPaths []string
+		var allRepos []string
+		for _, profileName := range args {
+			profile, err := cfg.GetProfile(profileName)
+			if err != nil {
+				return err
+			}
+			if len(profile.Paths) == 0 {
+				return fmt.Errorf("profile %q has no paths configured", profileName)
+			}
+			allPaths = append(allPaths, profile.Paths...)
+			allRepos = append(allRepos, profile.Repos...)
 		}
 
 		// Write paths to temp file for --files-from
@@ -32,7 +35,7 @@ var backupCmd = &cobra.Command{
 		}
 		defer os.Remove(tmpFile.Name())
 
-		for _, p := range profile.Paths {
+		for _, p := range allPaths {
 			fmt.Fprintln(tmpFile, p)
 		}
 		tmpFile.Close()
@@ -53,7 +56,7 @@ var backupCmd = &cobra.Command{
 			resticArgs = append(resticArgs, "--dry-run")
 		}
 
-		return runner.RunResticForEachRepo(cfg.Global, profile.Repos, resticArgs)
+		return runner.RunResticForEachRepo(cfg.Global, allRepos, resticArgs)
 	},
 }
 

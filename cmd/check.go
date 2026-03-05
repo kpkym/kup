@@ -6,12 +6,12 @@ import (
 )
 
 var checkCmd = &cobra.Command{
-	Use:               "check <profile>",
+	Use:               "check <profile>...",
 	Short:             "Check repository integrity",
-	Args:              cobra.ExactArgs(1),
+	Args:              cobra.MinimumNArgs(1),
 	ValidArgsFunction: profileCompletionFunc,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		repos, err := cfg.GetRepos(args[0])
+		repos, err := resolveRepos(args)
 		if err != nil {
 			return err
 		}
