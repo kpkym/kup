@@ -19,8 +19,14 @@ type GlobalConfig struct {
 }
 
 type ProfileConfig struct {
-	Repos []string `mapstructure:"repos"`
-	Paths []string `mapstructure:"paths"`
+	Enabled *bool    `mapstructure:"enabled"`
+	Repos   []string `mapstructure:"repos"`
+	Paths   []string `mapstructure:"paths"`
+}
+
+// IsEnabled returns true if the profile is enabled (default when unset).
+func (p *ProfileConfig) IsEnabled() bool {
+	return p.Enabled == nil || *p.Enabled
 }
 
 // GetRepos resolves a profile name to a list of repos.

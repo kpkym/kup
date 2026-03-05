@@ -124,29 +124,35 @@ func loadConfig(cfgFile string) error {
 		return fmt.Errorf("reading config: %w", err)
 	}
 
-	// Merge per-profile files from profiles/ subdirectory.
+	// Merge per-profile files from profiles/ subdirectory (recursive).
 	profilesDir := filepath.Join(configDir, "profiles")
-	if entries, err := os.ReadDir(profilesDir); err == nil {
-		for _, e := range entries {
-			if e.IsDir() || filepath.Ext(e.Name()) != ".toml" {
-				continue
-			}
-			name := e.Name()[:len(e.Name())-len(".toml")]
-			v2 := viper.New()
-			v2.SetConfigFile(filepath.Join(profilesDir, e.Name()))
-			if err := v2.ReadInConfig(); err != nil {
-				return fmt.Errorf("reading profiles/%s: %w", e.Name(), err)
-			}
-			if err := viper.MergeConfigMap(map[string]any{
-				"profiles": map[string]any{name: v2.AllSettings()},
-			}); err != nil {
-				return fmt.Errorf("merging profiles/%s: %w", e.Name(), err)
-			}
+	_ = filepath.WalkDir(profilesDir, func(path string, d os.DirEntry, err error) error {
+		if err != nil || d.IsDir() || filepath.Ext(d.Name()) != ".toml" {
+			return nil
 		}
-	}
+		rel, _ := filepath.Rel(profilesDir, path)
+		name := rel[:len(rel)-len(".toml")]
+		v2 := viper.New()
+		v2.SetConfigFile(path)
+		if err := v2.ReadInConfig(); err != nil {
+			return fmt.Errorf("reading profiles/%s: %w", rel, err)
+		}
+		if err := viper.MergeConfigMap(map[string]any{
+			"profiles": map[string]any{name: v2.AllSettings()},
+		}); err != nil {
+			return fmt.Errorf("merging profiles/%s: %w", rel, err)
+		}
+		return nil
+	})
 
 	if err := viper.Unmarshal(&cfg); err != nil {
 		return fmt.Errorf("parsing config: %w", err)
+	}
+
+	for name, profile := range cfg.Profiles {
+		if !profile.IsEnabled() {
+			delete(cfg.Profiles, name)
+		}
 	}
 
 	home, err := os.UserHomeDir()
