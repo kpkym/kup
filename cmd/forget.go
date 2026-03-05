@@ -1,7 +1,10 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/kpkym/kup/internal/runner"
 	"github.com/spf13/cobra"
@@ -26,9 +29,15 @@ var forgetCmd = &cobra.Command{
 		resticArgs := []string{"forget", "--keep-last", fmt.Sprintf("%d", keepLast)}
 
 		groupBy, _ := cmd.Flags().GetString("group-by")
-		if groupBy != "" {
-			resticArgs = append(resticArgs, "--group-by", groupBy)
+		if groupBy == "" {
+			fmt.Print("--group-by is empty, forget will apply to all snapshots without grouping. Continue? [y/N]: ")
+			scanner := bufio.NewScanner(os.Stdin)
+			scanner.Scan()
+			if !strings.EqualFold(strings.TrimSpace(scanner.Text()), "y") {
+				return fmt.Errorf("aborted")
+			}
 		}
+		resticArgs = append(resticArgs, "--group-by", groupBy)
 
 		prune, _ := cmd.Flags().GetBool("prune")
 		if prune {
@@ -48,5 +57,6 @@ func init() {
 	forgetCmd.Flags().Int("keep-last", 0, "number of latest snapshots to keep (required)")
 	forgetCmd.Flags().String("group-by", "paths", "group snapshots by")
 	forgetCmd.Flags().Bool("prune", false, "prune after forgetting")
+	forgetCmd.Flags().Bool("dry-run", false, "do not delete, just print what would be done")
 	rootCmd.AddCommand(forgetCmd)
 }
