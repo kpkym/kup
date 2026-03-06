@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/kpkym/kup/internal/runner"
 	"github.com/spf13/cobra"
 )
@@ -57,11 +55,10 @@ var resticCmd = &cobra.Command{
 			resticArgs = args
 		}
 
-		if repo == "" {
-			return fmt.Errorf("--repo is required for restic passthrough")
+		if repo != "" {
+			return runner.RunRestic(cfg.Global, repo, resticArgs)
 		}
-
-		return runner.RunRestic(cfg.Global, repo, resticArgs)
+		return runner.RunResticRaw(cfg.Global, resticArgs)
 	},
 }
 

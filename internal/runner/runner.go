@@ -26,6 +26,21 @@ func RunRestic(global config.GlobalConfig, repo string, args []string) error {
 	return runWithSignalForward(cmd)
 }
 
+// RunResticRaw executes restic with the given args without setting a repo.
+func RunResticRaw(global config.GlobalConfig, args []string) error {
+	if _, err := exec.LookPath("restic"); err != nil {
+		return fmt.Errorf("restic not found in PATH; install from https://restic.net")
+	}
+
+	cmd := exec.Command("restic", args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+	cmd.Env = resticEnvNoRepo(global)
+
+	return runWithSignalForward(cmd)
+}
+
 // RunRclone executes rclone with the given args.
 func RunRclone(global config.GlobalConfig, args []string) error {
 	if _, err := exec.LookPath("rclone"); err != nil {
@@ -61,6 +76,19 @@ func RunResticForEachRepo(global config.GlobalConfig, repos []string, args []str
 		return fmt.Errorf("failed for %d repo(s): %v", len(failed), failed)
 	}
 	return nil
+}
+
+func resticEnvNoRepo(global config.GlobalConfig) []string {
+	env := os.Environ()
+	env = append(env, "RCLONE_CONFIG="+global.RcloneConfig)
+	env = append(env, "RESTIC_PASSWORD="+global.ResticPassword)
+	if global.ResticPackSize > 0 {
+		env = append(env, "RESTIC_PACK_SIZE="+strconv.Itoa(global.ResticPackSize))
+	}
+	if global.RcloneNoCheckCertificate {
+		env = append(env, "RCLONE_NO_CHECK_CERTIFICATE=true")
+	}
+	return env
 }
 
 func resticEnv(global config.GlobalConfig, repo string) []string {
