@@ -45,7 +45,7 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().String("config", "", "config file (default: $KUP_CONFIG_DIR/config.toml)")
+	rootCmd.PersistentFlags().String("config", "", "config file (default: $KPK_CONFIG_DIR/kup/config.toml or ~/.config/kup/config.toml)")
 	rootCmd.PersistentFlags().Bool("dry-run", false, "pass --dry-run to restic")
 }
 
@@ -118,15 +118,19 @@ func loadConfig(cfgFile string) error {
 		viper.SetConfigFile(cfgFile)
 		configDir = filepath.Dir(cfgFile)
 	} else {
-		envDir := os.Getenv("KUP_CONFIG_DIR")
-		if envDir == "" {
-			return fmt.Errorf("KUP_CONFIG_DIR environment variable is not set")
+		envDir := os.Getenv("KPK_CONFIG_DIR")
+		if envDir != "" {
+			configDir = filepath.Join(envDir, "kup")
+		} else {
+			home, err := os.UserHomeDir()
+			if err != nil {
+				return fmt.Errorf("cannot find home directory: %w", err)
+			}
+			configDir = filepath.Join(home, ".config", "kup")
 		}
-		configDir = envDir
 		viper.SetConfigName("config")
 		viper.SetConfigType("toml")
 		viper.AddConfigPath(configDir)
-		viper.AddConfigPath(".")
 	}
 
 	if err := viper.ReadInConfig(); err != nil {
