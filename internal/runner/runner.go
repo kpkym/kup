@@ -21,7 +21,7 @@ func RunRestic(global config.GlobalConfig, repo string, args []string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
-	cmd.Env = resticEnv(global, repo)
+	cmd.Env = ResticEnv(global, repo)
 
 	return runWithSignalForward(cmd)
 }
@@ -91,7 +91,7 @@ func resticEnvNoRepo(global config.GlobalConfig) []string {
 	return env
 }
 
-func resticEnv(global config.GlobalConfig, repo string) []string {
+func ResticEnv(global config.GlobalConfig, repo string) []string {
 	env := os.Environ()
 	env = append(env,
 		"RESTIC_REPOSITORY="+repo,
