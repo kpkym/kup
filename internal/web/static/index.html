@@ -8,8 +8,99 @@
 </head>
 <body>
   <div class="container" id="app">
-    <p class="loading">Loading...</p>
+    <!-- Toolbar (columns view only) -->
+    <div class="toolbar" v-if="view === 'columns'">
+      <a class="toolbar-back" href="#/">&larr; Snapshots</a>
+      <span class="toolbar-snap">{{ snapId }}</span>
+      <button class="clear-cache-btn" @click="clearCache" v-if="cachedEntries > 0">
+        Clear cache ({{ cachedEntries }})
+      </button>
+    </div>
+
+    <!-- Snapshots View -->
+    <template v-if="view === 'snapshots'">
+      <div class="toolbar" v-if="cachedEntries > 0">
+        <span></span>
+        <button class="clear-cache-btn" @click="clearCache">Clear cache ({{ cachedEntries }})</button>
+      </div>
+      <p class="loading" v-if="snapshotsLoading">Loading snapshots</p>
+      <div class="error" v-else-if="snapshotsError">Failed to load snapshots: {{ snapshotsError }}</div>
+      <template v-else-if="snapshots.length">
+        <div class="section-title">{{ snapshots.length }} snapshot{{ snapshots.length !== 1 ? 's' : '' }}</div>
+        <div class="snap-grid">
+          <a class="snap-card" v-for="s in snapshots" :key="s.short_id"
+             :href="'#/snap/' + s.short_id + '/browse?path=/'">
+            <div class="snap-id">{{ s.short_id }}</div>
+            <div class="snap-meta">
+              <span>&#x1F552; {{ formatDateFull(s.time) }} ({{ formatDate(s.time) }})</span>
+              <span v-if="s.hostname">&#x1F4BB; {{ s.hostname }}</span>
+              <span v-if="s.paths && s.paths.length">&#x1F4C2; {{ s.paths.join(', ') }}</span>
+            </div>
+          </a>
+        </div>
+      </template>
+      <div class="empty" v-else>
+        <div class="empty-icon">&#x1F4E6;</div>
+        <p>No snapshots found in this repository.</p>
+      </div>
+    </template>
+
+    <!-- Columns Browser View -->
+    <template v-if="view === 'columns'">
+      <div class="columns-wrapper">
+        <div class="columns" ref="columnsEl">
+          <div :class="['column', { 'column-narrow': col.entries.length <= 1 }]" v-for="(col, ci) in columns" :key="col.path">
+            <!-- Loading -->
+            <div class="column-loading" v-if="col.loading">
+              <span class="loading">Loading</span>
+            </div>
+            <!-- Error -->
+            <div class="column-error" v-else-if="col.error">{{ col.error }}</div>
+            <!-- Empty -->
+            <div class="column-empty" v-else-if="!col.entries.length">Empty</div>
+            <!-- Entries -->
+            <template v-else>
+              <a v-for="e in col.sorted" :key="e.path"
+                 :class="['column-item', { selected: col.selected === e.name }]"
+                 :href="entryHref(e, col.path)"
+                 @click.prevent="onEntryClick(e, col.path, ci)">
+                <span class="icon" v-html="fileIcon(e.name, e.type)"></span>
+                <span class="item-name">{{ e.name }}</span>
+                <span class="chevron" v-if="e.type === 'dir'">&#x203A;</span>
+                <span class="item-size" v-else>{{ formatBytes(e.size || 0) }}</span>
+              </a>
+            </template>
+          </div>
+        </div>
+      </div>
+
+      <!-- File Preview -->
+      <div id="file-preview" v-if="previewFile">
+        <div class="preview-container">
+          <div class="preview-header">
+            <span class="icon" v-html="fileIcon(previewFile.name, 'file')"></span>
+            <h2>{{ previewFile.name }}</h2>
+            <span class="preview-loading loading" v-if="previewLoading">Loading</span>
+            <span class="preview-size" v-else>{{ previewFile.size ? formatBytes(previewFile.size) : '' }}</span>
+            <a class="download-btn" :href="dumpUrl(previewFile)" :download="previewFile.name">Download</a>
+          </div>
+          <div class="preview-body" v-if="readyPreview" :key="readyPreview.path">
+            <video v-if="previewType === 'video'" controls autoplay :key="dumpUrl(readyPreview)">
+              <source :src="dumpUrl(readyPreview)">
+            </video>
+            <img v-else-if="previewType === 'image'" :src="dumpUrl(readyPreview)" :alt="readyPreview.name">
+            <audio v-else-if="previewType === 'audio'" controls autoplay :key="dumpUrl(readyPreview)">
+              <source :src="dumpUrl(readyPreview)">
+            </audio>
+            <pre v-else-if="previewType === 'text'">{{ textContent }}</pre>
+            <p class="no-preview" v-else>No preview available</p>
+          </div>
+        </div>
+      </div>
+    </template>
   </div>
+
+  <script src="vue.global.prod.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
